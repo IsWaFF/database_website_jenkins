@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # Инициализируем объекты, но не привязываем к приложению сразу
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'login' # Куда кидать юзера, если он не вошел
+login_manager.login_view = 'main.login' # Куда кидать юзера, если он не вошел
 
 def create_app(test_config=None):
     load_dotenv(os.path.join(os.path.dirname(__file__), '../secrets/.env'))
