@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>💬 Общий чат</h1>
+
+<div class="chat-box mb-3" id="chat">
+    {% for msg in messages %}
+        <div class="message mb-2">
+            <strong>
+                <a href="{{ url_for('main.profile', user_id=msg.author.id) }}" class="text-decoration-none">
+                    {{ msg.author.display_name or msg.author.login }}
+                </a>
+            </strong> 
+            <small class="text-muted">{{ msg.timestamp.strftime('%H:%M') }}</small>:
+            <span>{{ msg.body }}</span>
+        </div>
+    {% endfor %}
+</div>
+
+{% if not current_user.is_banned %}
+    <form method="POST" class="d-flex">
+        <input type="text" name="message" class="form-control me-2" placeholder="Напиши что-нибудь..." required>
+        <button type="submit" class="btn btn-primary">Отправить</button>
+    </form>
+{% else %}
+    <div class="alert alert-danger">🚫 Вы забанены и не можете писать в чат.</div>
+{% endif %}
+
+<script>
+    // Автопрокрутка чата вниз при загрузке
+    var chatBox = document.getElementById("chat");
+    chatBox.scrollTop = chatBox.scrollHeight;
+</script>
+{% endblock %}

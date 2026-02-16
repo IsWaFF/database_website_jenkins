@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 text-center">
+        <img src="{{ url_for('static', filename='default.jpg') }}" class="rounded-circle mb-3" width="150" height="150">
+        <h3>{{ user.display_name or user.login }}</h3>
+        <p class="text-muted">@{{ user.login }}</p>
+        
+        <div class="d-flex justify-content-center gap-3 mb-3">
+            <div><b>{{ user.followers.count() }}</b><br>Подписчиков</div>
+            <div><b>{{ user.achievements|length }}</b><br>Ачивок</div>
+        </div>
+
+        {% if current_user.id != user.id %}
+            {% if current_user.is_following(user) %}
+                <a href="{{ url_for('main.follow', user_id=user.id) }}" class="btn btn-outline-danger">Отписаться</a>
+            {% else %}
+                <a href="{{ url_for('main.follow', user_id=user.id) }}" class="btn btn-primary">Подписаться</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">О себе</div>
+            <div class="card-body">
+                {% if current_user.id == user.id %}
+                    <form action="{{ url_for('main.edit_profile') }}" method="POST">
+                        <div class="mb-2">
+                            <label>Отображаемое имя</label>
+                            <input type="text" name="display_name" class="form-control" value="{{ user.display_name or '' }}">
+                        </div>
+                        <div class="mb-2">
+                            <label>Биография</label>
+                            <textarea name="bio" class="form-control">{{ user.bio or '' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-secondary">Сохранить</button>
+                    </form>
+                {% else %}
+                    <p>{{ user.bio or "Пользователь ничего о себе не рассказал." }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <h4>🏆 Достижения</h4>
+        <div class="d-flex gap-2">
+            {% for achievement in user.achievements %}
+                <div class="text-center" title="{{ achievement.description }}">
+                    <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        ★
+                    </div>
+                    <small>{{ achievement.name }}</small>
+                </div>
+            {% else %}
+                <p class="text-muted">Ачивок пока нет :(</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
