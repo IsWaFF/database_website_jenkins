@@ -17,6 +17,7 @@ COPY . .
 
 # Указываем переменную окружения, чтобы Python не буферизировал вывод (важно для логов в Docker)
 ENV PYTHONUNBUFFERED=1
-
+# Добавляем текущую директорию в пути поиска модулей
+ENV PYTHONPATH=/app
 # Указываем команду запуска
-CMD ["python", "app/run.py"]
+CMD ["python", "-m", "app.run"]
