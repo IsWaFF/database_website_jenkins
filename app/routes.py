@@ -127,31 +127,36 @@ def follow(user_id):
 @main.route('/admin', methods=['GET', 'POST'])
 @login_required
 def admin():
-    # Проверка на админа
     if not current_user.is_admin:
-        flash("Доступ запрещен!")
         return redirect(url_for('main.index'))
 
     if request.method == 'POST':
-        # 1. Логика генерации инвайта (из твоего админ.html)
+        # ГЕНЕРАЦИЯ
         if 'generate_invite' in request.form:
             new_code = str(uuid.uuid4())[:8].upper()
-            invite = Invite(code=new_code, created_by=current_user.id) # добавил создателя
-            db.session.add(invite)
-            db.session.commit()
-            flash(f"Создан новый код: {new_code}")
+            db.session.add(Invite(code=new_code))
+        
+        # УДАЛЕНИЕ ИНВАЙТА
+        elif 'delete_invite' in request.form:
+            inv_id = request.form.get('invite_id')
+            inv = Invite.query.get(inv_id)
+            if inv: db.session.delete(inv)
 
-        # 2. Логика банхаммера
+        # БАН
         elif 'ban_user' in request.form:
-            login_to_ban = request.form.get('login_to_ban')
-            user_to_ban = User.query.filter_by(login=login_to_ban).first()
-            if user_to_ban:
-                user_to_ban.is_banned = True
-                db.session.commit()
-                flash(f"Пользователь {login_to_ban} успешно забанен!")
-            else:
-                flash("Пользователь не найден")
+            login = request.form.get('login_to_ban')
+            user = User.query.filter_by(login=login).first()
+            if user: user.is_banned = True
 
-    # Получаем все инвайты для списка
+        # РАЗБАН
+        elif 'unban_user' in request.form:
+            user_id = request.form.get('user_id')
+            user = User.query.get(user_id)
+            if user: user.is_banned = False
+
+        db.session.commit()
+        return redirect(url_for('main.admin'))
+
     invites = Invite.query.all()
-    return render_template('admin.html', invites=invites)
+    banned_users = User.query.filter_by(is_banned=True).all()
+    return render_template('admin.html', invites=invites, banned_users=banned_users)
