@@ -1,22 +1,27 @@
 import pytest
 from app import create_app, db
-from app.models import Invite, Achievement
+from app.models import Achievement
 
 @pytest.fixture
 def app():
-    app = create_app()
-    app.config.update({
+    # Создаем конфиг специально для тестов
+    test_config = {
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", # База в памяти
-    })
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test_secret"
+    }
+    
+    app = create_app(test_config)
 
     with app.app_context():
         db.create_all()
-        # Создаем базовые данные для тестов
-        a = Achievement(name='Beta User', description='Test')
-        db.session.add(a)
-        db.session.commit()
+        # Создаем ачивку для тестов, если её нет
+        if not Achievement.query.filter_by(name='Beta User').first():
+            a = Achievement(name='Beta User', description='Test')
+            db.session.add(a)
+            db.session.commit()
         yield app
+        db.session.remove()
         db.drop_all()
 
 @pytest.fixture
