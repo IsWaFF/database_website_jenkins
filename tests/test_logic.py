@@ -1,3 +1,4 @@
+from app import db 
 from app.models import User, Invite, Achievement
 
 def test_registration_logic(client, app):
