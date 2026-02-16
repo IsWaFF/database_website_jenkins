@@ -4,6 +4,9 @@ from flask_login import login_user, logout_user, login_required, current_user
 from . import db
 from .models import User, Invite, Message, Achievement
 import uuid
+from flask import render_template, redirect, url_for, flash
+from flask_login import current_user, login_required
+from .models import Invite, db
 
 main = Blueprint('main', __name__)
 
@@ -22,7 +25,7 @@ def index():
                 db.session.commit()
             return redirect(url_for('main.index'))
     
-    messages = Message.query.order_by(Message.timestamp.desc()).limit(50).all()
+    messages = Message.query.order_by(Message.timestamp.asc()).all()
     return render_template('index.html', messages=messages)
 
 # --- РЕГИСТРАЦИЯ (С инвайтами и Beta User) ---
@@ -120,30 +123,35 @@ def follow(user_id):
         db.session.commit()
     return redirect(url_for('main.profile', user_id=user_id))
 
-# --- АДМИНКА ---
+# --- ЕДИНАЯ АДМИНКА ---
 @main.route('/admin', methods=['GET', 'POST'])
 @login_required
 def admin():
+    # Проверка на админа
     if not current_user.is_admin:
-        return "Access Denied", 403
+        flash("Доступ запрещен!")
+        return redirect(url_for('main.index'))
 
     if request.method == 'POST':
-        # Генерация инвайтов
+        # 1. Логика генерации инвайта (из твоего админ.html)
         if 'generate_invite' in request.form:
-            code = str(uuid.uuid4())[:8] # Короткий код
-            new_invite = Invite(code=code, created_by=current_user.id)
-            db.session.add(new_invite)
+            new_code = str(uuid.uuid4())[:8].upper()
+            invite = Invite(code=new_code, created_by=current_user.id) # добавил создателя
+            db.session.add(invite)
             db.session.commit()
-            flash(f'Создан инвайт: {code}')
-        
-        # Бан юзера
+            flash(f"Создан новый код: {new_code}")
+
+        # 2. Логика банхаммера
         elif 'ban_user' in request.form:
             login_to_ban = request.form.get('login_to_ban')
-            user = User.query.filter_by(login=login_to_ban).first()
-            if user:
-                user.is_banned = True
+            user_to_ban = User.query.filter_by(login=login_to_ban).first()
+            if user_to_ban:
+                user_to_ban.is_banned = True
                 db.session.commit()
-                flash(f'Пользователь {user.login} забанен!')
+                flash(f"Пользователь {login_to_ban} успешно забанен!")
+            else:
+                flash("Пользователь не найден")
 
-    invites = Invite.query.filter_by(is_used=False).all()
+    # Получаем все инвайты для списка
+    invites = Invite.query.all()
     return render_template('admin.html', invites=invites)
