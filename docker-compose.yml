@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Наше веб-приложение
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app:/app/app       # Прокидываем код, чтобы изменения работали без пересборки (для разработки)
+      - ./secrets:/app/secrets # Прокидываем секреты
+    depends_on:
+      - db
+    environment:
+      - FLASK_ENV=development
+    networks:
+      - app_network
+
+  # База данных PostgreSQL
+  db:
+    image: postgres:15-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Чтобы данные не стирались при перезапуске
+    env_file:
+      - ./secrets/.env # Читаем переменные для создания БД
+    networks:
+      - app_network
+
+# Создаем сеть, чтобы контейнеры видели друг друга
+networks:
+  app_network:
+    driver: bridge
+
+# Создаем том для хранения данных БД
+volumes:
+  postgres_data:
